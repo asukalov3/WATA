@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGUA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Ephesis&family=Cinzel+Decorative:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --color-dark: #1a1a1a;
+      --color-light: #f5f5f3;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: transparent;
+      overflow-x: hidden;
+    }
+
+    /* ─── HERO (FIXED BACKGROUND) ─────────────────────────────── */
+    .hero {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: #111;
+      overflow: hidden;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      transform: scale(1.12);
+      opacity: 0;
+      filter: brightness(0.72);
+    }
+
+    .hero-image.loaded {
+      transform: scale(1);
+      opacity: 1;
+      transition:
+        transform 2.2s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 1.2s ease;
+    }
+
+    /* Vignette */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 100%);
+      pointer-events: none;
+    }
+
+    /* ─── HERO OVERLAY CONTENT (fixed, fades on scroll) ──────── */
+    .hero-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .hero-title {
+      font-size: clamp(64px, 11vw, 150px);
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1a1a1a;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 1s ease 0.8s, transform 1s ease 0.8s;
+    }
+
+    .hero-title.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── SCROLL INDICATOR ────────────────────────────────────── */
+    .scroll-indicator {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity 0.8s ease 1.8s;
+      pointer-events: none;
+    }
+
+    .scroll-indicator.visible { opacity: 1; }
+
+    .scroll-label {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scroll-line::after {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      animation: scrollDrop 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      animation-delay: 2s;
+    }
+
+    @keyframes scrollDrop {
+      0%   { top: -100%; }
+      50%  { top: 0%; }
+      100% { top: 100%; }
+    }
+
+    /* ─── SCROLL SPACER (pushes content below viewport) ──────── */
+    .hero-spacer {
+      height: 100vh;
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ─── QUOTE SECTION (scrolls over fixed image) ────────────── */
+    .quote-section {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 40px;
+    }
+
+    .quote-inner {
+      width: 70%;
+      user-select: none;
+    }
+
+    .quote-paragraph {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(28px, 5vw, 68px);
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.75;
+      letter-spacing: 0.06em;
+      margin-bottom: 1.8em;
+      hyphens: none;
+      overflow-wrap: normal;
+      word-break: keep-all;
+    }
+
+    .quote-paragraph:last-child { margin-bottom: 0; }
+
+    /* Single-line headline */
+    .quote-headline {
+      font-size: clamp(14px, 3vw, 48px);
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+
+    /* ─── PINNED SECTION (sticky + fade-out like AGUA) ────────── */
+    .pinned-section {
+      position: relative;
+      height: 200vh;
+      z-index: 2;
+    }
+
+    .pinned-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ─── SPLIT SECTION (text left / image right) ─────────────── */
+    .split-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    .split-left {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 60px;
+    }
+
+    .split-word {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(28px, 5.5vw, 88px);
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+      user-select: none;
+      text-shadow: 0 2px 40px rgba(0,0,0,0.4);
+    }
+
+    .split-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      overflow: hidden;
+    }
+
+    .split-right img {
+      max-height: 75vh;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* ─── WAVE CHARACTER SPANS ────────────────────────────────── */
+    .wave-word {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .wave-char {
+      display: inline-block;
+      will-change: transform;
+    }
+
+    .wave-space {
+      display: inline-block;
+      width: 0.28em;
+    }
+
+    /* ─── CORNER CREDITS ─────────────────────────────────────── */
+    .corner-credit {
+      position: fixed;
+      bottom: 28px;
+      z-index: 10;
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.72);
+      pointer-events: none;
+    }
+
+    .corner-credit-left  { left: 32px; }
+    .corner-credit-right { right: 32px; }
+  </style>
+</head>
+<body>
+
+  <!-- FIXED HERO IMAGE -->
+  <section class="hero" id="hero">
+    <img class="hero-image" id="heroImage" src="./assets/images/hero.jpg" alt="Hero" />
+  </section>
+
+  <!-- FIXED HERO TEXT (fades out on scroll) -->
+  <div class="hero-overlay" id="heroOverlay">
+    <p class="hero-title" id="heroTitle">AGUA</p>
+  </div>
+
+  <!-- FIXED SCROLL INDICATOR -->
+  <div class="scroll-indicator" id="scrollIndicator">
+    <span class="scroll-label">Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+
+  <!-- CORNER CREDITS -->
+  <span class="corner-credit corner-credit-left">Photo by Hiroshi Sugimoto</span>
+  <span class="corner-credit corner-credit-right">Web by Tsao</span>
+
+  <!-- SPACER -->
+  <div class="hero-spacer"></div>
+
+  <!-- SECTION 1: WHAT'S (sticky + fade-out) -->
+  <section class="pinned-section" id="whatsSection">
+    <div class="pinned-sticky" id="whatsContent">
+      <div class="quote-inner">
+        <p class="quote-paragraph quote-headline" data-wave>WHAT'S THE WATER MEANS TO YOU?</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: PERMANENCE? (split layout, sticky + fade-out) -->
+  <section class="pinned-section" id="permanenceSection">
+    <div class="split-sticky" id="permanenceContent">
+      <div class="split-left">
+        <p class="split-word" data-wave>PERMANENCE?</p>
+      </div>
+      <div class="split-right">
+        <img src="./assets/images/water2.jpg" alt="Water ripple" />
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: TRANSIENCE (image left, text right) -->
+  <section class="pinned-section" id="transienceSection">
+    <div class="split-sticky" id="transienceContent">
+      <div class="split-right">
+        <img src="./assets/images/water3.jpg" alt="Water" />
+      </div>
+      <div class="split-left">
+        <p class="split-word" data-wave>TRANSIENCE</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Lao Tzu quote -->
+  <section class="quote-section">
+    <div class="quote-inner" id="quoteInner">
+      <p class="quote-paragraph" data-wave>Lao Tzu wrote:</p>
+      <p class="quote-paragraph" data-wave>"Highest good is like water. Because water excels in benefiting the myriad creatures without contending with them and settles where none would like to be, it comes close to the Way."</p>
+      <p class="quote-paragraph" data-wave>In a culture that often values aggressive striving and rigid control, the Daoist philosophy of water reminds us that true resilience comes from flexibility, not stubborn hardness.</p>
+    </div>
+  </section>
+
+  <script>
+    /* ── Hero entrance ─────────────────────────────────────── */
+    const heroImage       = document.getElementById('heroImage');
+    const heroTitle       = document.getElementById('heroTitle');
+    const heroOverlay     = document.getElementById('heroOverlay');
+    const scrollIndicator = document.getElementById('scrollIndicator');
+
+    function triggerHeroEntrance() {
+      heroImage.classList.add('loaded');
+      setTimeout(() => heroTitle.classList.add('visible'), 600);
+      setTimeout(() => scrollIndicator.classList.add('visible'), 900);
+    }
+
+    heroImage.complete ? triggerHeroEntrance()
+      : heroImage.addEventListener('load',  triggerHeroEntrance)
+      || heroImage.addEventListener('error', triggerHeroEntrance);
+
+    /* ── Scroll: fade behaviours ───────────────────────────── */
+    const whatsSection      = document.getElementById('whatsSection');
+    const whatsContent      = document.getElementById('whatsContent');
+    const permanenceSection = document.getElementById('permanenceSection');
+    const permanenceContent = document.getElementById('permanenceContent');
+    const transienceSection = document.getElementById('transienceSection');
+    const transienceContent = document.getElementById('transienceContent');
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
+    }, { passive: true });
+
+    function onScroll() {
+      const scrollY = window.scrollY;
+      const vh      = window.innerHeight;
+
+      // AGUA fade
+      const heroFade = Math.min(scrollY / (vh * 0.5), 1);
+      heroOverlay.style.opacity     = 1 - heroFade;
+      scrollIndicator.style.opacity = scrollIndicator.classList.contains('visible')
+        ? Math.max(0, 1 - heroFade * 4)
+        : 0;
+
+      // WHAT'S fade
+      const whatsProgress = (scrollY - whatsSection.offsetTop) / vh;
+      whatsContent.style.opacity = Math.max(0, 1 - Math.max(0, whatsProgress));
+
+      // PERMANENCE? fade
+      const permProgress = (scrollY - permanenceSection.offsetTop) / vh;
+      permanenceContent.style.opacity = Math.max(0, 1 - Math.max(0, permProgress));
+
+      // TRANSIENCE fade
+      const transProgress = (scrollY - transienceSection.offsetTop) / vh;
+      transienceContent.style.opacity = Math.max(0, 1 - Math.max(0, transProgress));
+
+      ticking = false;
+    }
+
+    /* ── Wave text: split into word + char spans ───────────── */
+    document.querySelectorAll('[data-wave]').forEach(p => {
+      const words = p.textContent.split(' ');
+      p.innerHTML = '';
+
+      words.forEach((word, wi) => {
+        const wordEl = document.createElement('span');
+        wordEl.className = 'wave-word';
+
+        [...word].forEach(ch => {
+          const span = document.createElement('span');
+          span.className   = 'wave-char';
+          span.textContent = ch;
+          wordEl.appendChild(span);
+        });
+
+        p.appendChild(wordEl);
+
+        if (wi < words.length - 1) {
+          const sp = document.createElement('span');
+          sp.className = 'wave-space';
+          p.appendChild(sp);
+        }
+      });
+    });
+
+    /* ── Wave animation ────────────────────────────────────── */
+    let mouseX = -9999, mouseY = -9999;
+    let rafId  = null;
+
+    const AMPLITUDE = 32;
+    const DECAY     = 0.030;
+    const WAVE_K    = 0.044;
+    const WAVE_SPD  = 0.0038;
+    const REACH     = 180;
+    const startTime = performance.now();
+
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (!rafId) rafId = requestAnimationFrame(waveLoop);
+    }, { passive: true });
+
+    document.addEventListener('mouseleave', () => {
+      mouseX = -9999;
+      mouseY = -9999;
+    });
+
+    function waveLoop(now) {
+      rafId = null;
+      const t = (now - startTime) * WAVE_SPD;
+      let anyActive = false;
+
+      document.querySelectorAll('.wave-char').forEach(el => {
+        const r    = el.getBoundingClientRect();
+        const cx   = r.left + r.width  / 2;
+        const cy   = r.top  + r.height / 2;
+        const dist = Math.sqrt((cx - mouseX) ** 2 + (cy - mouseY) ** 2);
+
+        let y = 0;
+        if (dist < REACH * 3.5) {
+          const env = Math.exp(-dist * DECAY);
+          y = -AMPLITUDE * env * Math.sin(WAVE_K * dist - t);
+          if (Math.abs(y) > 0.05) anyActive = true;
+        }
+
+        el.style.transform = `translateY(${y.toFixed(2)}px)`;
+      });
+
+      if (anyActive || mouseX !== -9999) {
+        rafId = requestAnimationFrame(waveLoop);
+      } else {
+        document.querySelectorAll('.wave-char').forEach(el => {
+          el.style.transform = 'translateY(0)';
+        });
+      }
+    }
+  </script>
+</body>
+</html>
